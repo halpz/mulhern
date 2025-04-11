@@ -1,120 +1,141 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-    <meta charset="UTF-8">
-    <link id="favicon" rel="icon" type="image/x-icon" href="resources/favicon.ico">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="css/pico.min.css">
-    <title>Stephen Mulhern</title>
-    <style>
-        img {
-          border-radius: 20px;
-        }
-        #messageList {
-          max-height:700px;
-          overflow-y: auto;
-          border-radius: 0.5rem;
-        }
-        #chatBubble {
-          padding: 0.5rem;
-          margin-bottom: 0.5rem;
-          border-radius: 0.5rem;
-          background: #47A417;
-          color: #fff;
-        }
-        #chatBubble.you {
-          background: #2060DF;
-        }
-    </style>
+	<meta charset="UTF-8">
+	<link id="favicon" rel="icon" type="image/x-icon" href="resources/favicon.ico">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<link rel="stylesheet" href="css/pico.min.css">
+	<title>Stephen Mulhern</title>
+	<style>
+	img {
+		border-radius: 20px;
+	}
+
+	#messageList {
+		max-height: 700px;
+		overflow-y: auto;
+		border-radius: 0.5rem;
+	}
+
+	#chatBubble {
+		padding: 0.5rem;
+		margin-bottom: 0.5rem;
+		border-radius: 0.5rem;
+		background: #47A417;
+		color: #fff;
+	}
+
+	#chatBubble.you {
+		background: #2060DF;
+	}
+	</style>
 </head>
+
 <body>
-<main class="container">
-  <div class="grid">
-    <div>
-      <img id="img" src="resources/mulhern.jpg" alt="Stephen Mulhern"/>
-    </div>
-    <div>
-      <article>
-        <header>
-            <button id="play" onclick="playBGM()">▶</button>
-            Stephen Mulhern is ready to chat
-        </header>
-        <div id="messageList">
-          {% for message in messages %}
-          <div id="chatBubble" class="{% if message.startswith('You:') %}you{% else %}other{% endif %}">{{ message }}</div>
-          {% endfor %}
-        </div>
-        <footer>
-          <form id="messageForm" onsubmit="handleMessageSubmit(event)">
-        <fieldset role="group">
-            <input name="message" type="text" id="messageInput" placeholder="Send me a message!" autocomplete="text" autofocus/>
-            <input type="submit" value="Send" />
-        </fieldset>
-    </form>
-    <br/>
-    <form action="/clear" method="POST">
-        <button type="submit" class="outline contrast">Clear Chat</button>
-    </form>
-        </footer>
-      </article>
-      </div>
-    </div>
-</main>
-<audio loop id="bgm">
-    <source src="resources/bgm.m4a" type="audio/aac">
-    Your browser does not support the audio element.
-</audio>
-<script>
-    async function handleMessageSubmit(event) {
-        event.preventDefault();
-        const messageInput = document.getElementById("messageInput");
-        const messageList = document.getElementById("messageList");
-        const message = messageInput.value.trim();
-        if (!message) return;
+	<main class="container">
+		<div class="grid">
+			<div>
+				<img id="img" src="resources/mulhern.jpg" alt="Stephen Mulhern" />
+			</div>
+			<div>
+				<article>
+					<header>
+						<button id="play" onclick="playBGM()">▶</button> Stephen Mulhern is ready to chat </header>
+					<div id="messageList"> {% for message in messages %} <div id="chatBubble" class="{% if message.startswith('You:') %}you{% else %}other{% endif %}">{{ message }}</div> {% endfor %} </div>
+					<footer>
+						<form id="messageForm" onsubmit="handleMessageSubmit(event)">
+							<fieldset role="group">
+								<input name="message" type="text" id="messageInput" placeholder="Send me a message!" autocomplete="text" autofocus />
+								<input type="submit" value="Send" />
+							</fieldset>
+						</form>
+						<br />
+						<form action="/clear" method="POST">
+							<button type="submit" class="outline contrast">Clear Chat</button>
+						</form>
+					</footer>
+				</article>
+			</div>
+		</div>
+	</main>
+	<audio loop id="bgm">
+		<source src="resources/bgm.m4a" type="audio/aac"> Your browser does not support the audio element. </audio>
+	<audio id="speech"></audio>
+	<script>
+	async function handleMessageSubmit(event) {
+		event.preventDefault();
+		const messageInput = document.getElementById("messageInput");
+		const messageList = document.getElementById("messageList");
+		const message = messageInput.value.trim();
+		if(!message) return;
+		messageList.innerHTML += `<div id="chatBubble" class="you">You: ${messageInput.value}</div>`;
+		messageList.innerHTML += `<div>Stephen is typing...</div>`;
+		messageList.scrollTop = messageList.scrollHeight;
+		messageInput.value = ""
+		try {
+			const response = await fetch("/send", {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+				},
+				body: JSON.stringify({
+					message
+				}),
+			});
+			const data = await response.json();
+			await speak(data.reply)
+			messageList.lastChild.remove();
+			messageList.innerHTML += `<div id="chatBubble">${data.reply}</div>`;
+			messageList.scrollTop = messageList.scrollHeight;
+			const randomNum = Math.floor(Math.random() * 7) + 1;
+			document.getElementById("img").src = `resources/mulhern-${randomNum}.jpg`;
+		} catch (err) {
+			console.error("Failed to send message:", err);
+			messageList.lastChild.remove();
+			messageList.innerHTML += `<div id="chatBubble">Oops! Something went wrong.</div>`;
+		}
+		messageInput.value = "";
+	}
+	async function speak(text) {
+		const audioPlayer = document.getElementById('speech');
+		try {
+			const response = await fetch('/speak', {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json'
+				},
+				body: JSON.stringify({
+					text: text
+				})
+			});
+			if(response.ok) {
+				const audioBlob = await response.blob();
+				const audioUrl = URL.createObjectURL(audioBlob);
+				audioPlayer.src = audioUrl;
+				audioPlayer.play();
+			} else {
+				console.error('Error synthesizing speech:', response.statusText);
+			}
+		} catch (error) {
+			console.error('Failed to fetch speech audio:', error);
+		}
+	}
 
-        messageList.innerHTML += `<div id="chatBubble" class="you">You: ${messageInput.value}</div>`;
-        messageList.innerHTML += `<div>Stephen is typing...</div>`;
-        messageList.scrollTop = messageList.scrollHeight;
-        messageInput.value = ""
-
-        try {
-            const response = await fetch("/send", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({ message }),
-            });
-
-            const data = await response.json();
-            messageList.lastChild.remove();
-            messageList.innerHTML += `<div id="chatBubble">${data.reply}</div>`;
-            messageList.scrollTop = messageList.scrollHeight;
-            const randomNum = Math.floor(Math.random() * 7) + 1;
-            document.getElementById("img").src = `resources/mulhern-${randomNum}.jpg`;
-        } catch (err) {
-            console.error("Failed to send message:", err);
-            messageList.lastChild.remove();
-            messageList.innerHTML += `<div id="chatBubble">Oops! Something went wrong.</div>`;
-        }
-
-        messageInput.value = "";
-    }
-
-    function playBGM() {
-        const bgm = document.getElementById("bgm");
-        if (bgm.paused) {
-            bgm.play();
-            bgm.muted = false;
-            document.getElementById("play").innerHTML = "⏸"
-        } else {
-            bgm.pause();
-            document.getElementById("play").innerHTML = "▶"
-        }
-    }
-
-    const messageList = document.getElementById("messageList");
-    messageList.scrollTop = messageList.scrollHeight;
-</script>
+	function playBGM() {
+		const bgm = document.getElementById("bgm");
+		if(bgm.paused) {
+			bgm.play();
+			bgm.muted = false;
+			document.getElementById("play").innerHTML = "⏸"
+		} else {
+			bgm.pause();
+			document.getElementById("play").innerHTML = "▶"
+		}
+	}
+	const messageList = document.getElementById("messageList");
+	messageList.scrollTop = messageList.scrollHeight;
+	</script>
 </body>
+
 </html>

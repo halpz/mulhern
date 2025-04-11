@@ -7,12 +7,13 @@ from fastapi.responses import HTMLResponse, FileResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from database import save_chat, init_db
 from session import SessionMiddleware, get_messages, get_last_response_id, add_message, set_last_response_id, start_new_session
+from speech import router as speech_router
 
 app = FastAPI()
 
 # noinspection PyTypeChecker
 app.add_middleware(SessionMiddleware)
-
+app.include_router(speech_router)
 templates = Jinja2Templates(directory="templates")
 app.mount("/resources", StaticFiles(directory="resources"), name="resources")
 app.mount("/css", StaticFiles(directory="css"), name="css")
