@@ -1,15 +1,12 @@
 import os
-
 from fastapi import FastAPI
 from openai import OpenAI
 from fastapi.templating import Jinja2Templates
 from fastapi.requests import Request
 from fastapi.responses import HTMLResponse, FileResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
-
 from database import save_chat, init_db
 from session import SessionMiddleware, get_messages, get_last_response_id, add_message, set_last_response_id, start_new_session
-import logging
 
 app = FastAPI()
 
@@ -20,8 +17,6 @@ templates = Jinja2Templates(directory="templates")
 app.mount("/resources", StaticFiles(directory="resources"), name="resources")
 app.mount("/css", StaticFiles(directory="css"), name="css")
 
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
 
 init_db()
 
@@ -46,9 +41,7 @@ def home(request: Request):
 async def send(request: Request):
     data = await request.json()
     message = data.get("message", "")
-    logger.info(message, extra={"type":"message"})
     reply = prompt(request, message, get_last_response_id(request))
-    logger.info(reply, extra={"type":"reply"})
     return {"reply": reply}
 
 @app.post("/clear")
