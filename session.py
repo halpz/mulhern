@@ -42,6 +42,12 @@ def get_last_response_id(request: Request):
 def set_last_response_id(request: Request, last_id: str):
     request.state.session["lastResponseId"] = last_id
 
-def clear_session(request: Request):
-    request.state.session["lastResponseId"] = None
-    request.state.session["chat"] = []
+
+def start_new_session(request: Request, response: Response):
+    new_session_id = str(uuid.uuid4())
+    session_store[new_session_id] = {}
+
+    request.state.session_id = new_session_id
+    request.state.session = session_store[new_session_id]
+
+    response.set_cookie("session_id", new_session_id)

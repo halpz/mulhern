@@ -1,14 +1,18 @@
+import os
+
 from fastapi import FastAPI
 from openai import OpenAI
 from fastapi.templating import Jinja2Templates
 from fastapi.requests import Request
-from fastapi.responses import HTMLResponse, RedirectResponse, FileResponse
+from fastapi.responses import HTMLResponse, FileResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
-from session import SessionMiddleware, get_messages, get_last_response_id, add_message, set_last_response_id, \
-    clear_session
+
+from database import save_chat, init_db
+from session import SessionMiddleware, get_messages, get_last_response_id, add_message, set_last_response_id, start_new_session
 import logging
 
 app = FastAPI()
+
 # noinspection PyTypeChecker
 app.add_middleware(SessionMiddleware)
 
@@ -19,7 +23,15 @@ app.mount("/css", StaticFiles(directory="css"), name="css")
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-openai_client = OpenAI()
+init_db()
+
+if os.environ.get("OPENAI_API_KEY"):
+    openai_client = OpenAI()
+else:
+    with open("apikey.txt") as f:
+        key = f.read().strip()
+        openai_client = OpenAI(api_key=key)
+
 
 @app.get('/favicon.ico', include_in_schema=False)
 async def favicon():
@@ -41,8 +53,9 @@ async def send(request: Request):
 
 @app.post("/clear")
 def clear_chat(request: Request):
-    clear_session(request)
-    return RedirectResponse("/", status_code=303)
+    response = RedirectResponse(url="/", status_code=303)
+    start_new_session(request, response)
+    return response
 
 def prompt(request: Request, prompt_text: str, prev: str | None = None):
     add_message(request, "You: "+prompt_text)
@@ -59,5 +72,9 @@ def prompt(request: Request, prompt_text: str, prev: str | None = None):
 
     add_message(request, "Stephen: "+response.output_text)
     set_last_response_id(request, response.id)
+
+    session_id = request.state.session_id
+    messages = get_messages(request)
+    save_chat(session_id, messages)
 
     return response.output_text
