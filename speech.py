@@ -15,7 +15,7 @@ async def synthesize_speech(request: SpeakRequest):
     synthesis_input = texttospeech.SynthesisInput({"text": request.text})
 
     voice = texttospeech.VoiceSelectionParams(
-        {"language_code": "en-US", "ssml_gender": texttospeech.SsmlVoiceGender.NEUTRAL}
+        {"language_code": "en-GB", "ssml_gender": texttospeech.SsmlVoiceGender.MALE}
     )
 
     audio_config = texttospeech.AudioConfig(
