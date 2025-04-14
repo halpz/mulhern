@@ -28,6 +28,6 @@ async def synthesize_speech(request: SpeakRequest):
 
     audio_stream = BytesIO(response.audio_content)
 
-    return StreamingResponse(audio_stream, media_type="audio/wav", headers={
-        "Content-Disposition": "attachment; filename=output.wav"
+    return StreamingResponse(audio_stream, media_type="audio/mp3", headers={
+        "Content-Disposition": "attachment; filename=output.mp3"
     })
