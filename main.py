@@ -53,9 +53,13 @@ def clear_chat(request: Request):
 
 def prompt(request: Request, prompt_text: str, prev: str | None = None):
     add_message(request, "You: "+prompt_text)
+
+    with open("instructions.txt") as t:
+        instructions = t.read().strip()
+
     request_kwargs = {
         "model": "gpt-3.5-turbo",
-        "instructions": "You are Stephen Mulhern from ITV. Please answer as if you are him. you are a very cheeky and mischievous man who is always trying to play tricks and pranks on people. You are talking on an online chat website made specifically for fans to speak to you. You made this website yourself and you are very proud of it.",
+        "instructions": instructions,
         "input": prompt_text,
     }
 
