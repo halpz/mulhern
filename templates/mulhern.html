@@ -41,8 +41,14 @@
 			<div>
 				<article>
 					<header>
-						<button id="play" onclick="playBGM()">▶</button> Stephen Mulhern is ready to chat </header>
-					<div id="messageList"> {% for message in messages %} <div id="chatBubble" class="{% if message.startswith('You:') %}you{% else %}other{% endif %}">{{ message }}</div> {% endfor %} </div>
+						<button id="play" onclick="playBGM()">▶</button>
+						Stephen Mulhern is ready to chat
+					</header>
+					<div id="messageList">
+						{% for message in messages %}
+						<div id="chatBubble" class="{% if message.startswith('You:') %}you{% else %}other{% endif %}">{{ message }}</div>
+						{% endfor %}
+					</div>
 					<footer>
 						<form id="messageForm" onsubmit="handleMessageSubmit(event)">
 							<fieldset role="group">
@@ -60,7 +66,9 @@
 		</div>
 	</main>
 	<audio loop id="bgm">
-		<source src="resources/bgm.m4a" type="audio/aac"> Your browser does not support the audio element. </audio>
+		<source src="resources/bgm.m4a" type="audio/aac">
+		Your browser does not support the audio element.
+	</audio>
 	<audio id="speech"></audio>
 	<script>
 	async function handleMessageSubmit(event) {
