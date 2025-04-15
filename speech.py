@@ -1,3 +1,5 @@
+import os
+
 from elevenlabs.core import ApiError
 from google.cloud import texttospeech
 from fastapi import APIRouter
@@ -7,12 +9,17 @@ from io import BytesIO
 from elevenlabs.client import ElevenLabs
 import logging
 
-with open("eleven.txt") as f:
-    key = f.read().strip()
+
+key = os.environ.get("ELEVEN_KEY")
+if not key:
+    with open("eleven.txt") as f:
+        key = f.read().strip()
+
 
 client = ElevenLabs(
   api_key=key,
 )
+
 
 router = APIRouter()
 
