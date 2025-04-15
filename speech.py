@@ -5,6 +5,7 @@ from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 from io import BytesIO
 from elevenlabs.client import ElevenLabs
+import logging
 
 with open("eleven.txt") as f:
     key = f.read().strip()
@@ -29,7 +30,8 @@ async def synthesize_speech(request: SpeakRequest):
         return StreamingResponse(audio_stream, media_type="audio/mp3", headers={
             "Content-Disposition": "attachment; filename=output.mp3"
         })
-    except ApiError:
+    except ApiError as e:
+        logging.warning(f"ElevenLabs API error: {e}")
         return await fallback_speech(request)
 
 
